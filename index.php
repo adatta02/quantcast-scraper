@@ -74,7 +74,7 @@ endif;
               <?php else: ?>
                 <p>Upload a file with ONE URL per line and specify a notification email address.</p>
                 
-                <form action="index.php" method="POST" enctype="multipart/form-data">
+                <form action="" method="POST" enctype="multipart/form-data">
                   <table class="table table-striped">
                     <tbody>
                       <tr><td><input type="file" name="dataFile"></td></tr>

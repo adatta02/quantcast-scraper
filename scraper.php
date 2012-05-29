@@ -15,12 +15,26 @@ $file = array_pop( $files );
 $lines = file($file);
 $notificationEmailAddress = array_shift( $lines );
 
-$newFilename = dirname(__FILE__) . "/uploaded_files/" . time() . ".result";
-// rename( $file, $newFilename );
+$base = str_replace(".process", "", basename( $file ));
+$newFilename = dirname(__FILE__) . "/uploaded_files/" . $base . ".inprogress";
+$targetFilename = dirname(__FILE__) . "/uploaded_files/" . $base . ".csv";
+rename( $file, $newFilename );
 
 $scrapedData = array();
 
+$csvOutputHeader = array(
+  "hostname", "us_people_per_month", "us_visits_per_month", "us_page_views_per_month",
+  "int_people_per_month", "int_visits_per_month", "int_page_views_per_month",
+  "us_visits_per_month_online", "int_visits_per_month_online", "us_visits_per_month_mobile", "int_visits_per_month_mobile",
+  "us_page_views_per_month_online", "int_page_views_per_month_online", "us_page_views_per_month_mobile", "int_page_views_per_month_mobile"
+);
+
+$csvOutputData = array();
+$csvOutputData[] = join(",", $csvOutputHeader);
+
 $ch = curl_init ();
+$count = 0;
+$start = time();
 
 foreach( $lines as $ln ){
   
@@ -39,8 +53,9 @@ foreach( $lines as $ln ){
   curl_setopt ( $ch, CURLOPT_POST, 0 );
   $result = curl_exec ( $ch );
   
+  $count ++;  
   $doc = phpQuery::newDocument( $result );
-    
+  
   $dataArray = array();
   $rowCount = 0;
   foreach( $doc[".traffic"]->find("tr:gt(0)") as $row ){
@@ -69,12 +84,32 @@ foreach( $lines as $ln ){
     $rowCount ++;
   }
   
+  $dataArray[ "hostname" ] = $hostname;
   $scrapedData[ $hostname ] = $dataArray;
   
-  print_r( $scrapedData );
+  $csvData = array( );
+  foreach( $csvOutputHeader as $k ){ 
+    
+    if( array_key_exists($k, $dataArray) ){
+      $csvData[] = $dataArray[ $k ];
+    }else{
+      $csvData[] = "";
+    } 
+    
+  }
+  $csvOutputData[] = join(", ", $csvData);
+
+  echo $hostname . "\n";
   
-  die();
+  file_put_contents($targetFilename, join("\n", $csvOutputData));
+  
+  sleep(1);
 }
 
 curl_close ( $ch );
 
+$sec = time() - $start;
+$url = "http://hypervipr.com/quantcast-scraper/uploaded_files/" . $base . ".csv";
+
+mail( $notificationEmailAddress, 
+	  "Your Quantcast.com enhanced file is ready!", "Processed $count URLs in $sec seconds. Download the file at $url \n");
