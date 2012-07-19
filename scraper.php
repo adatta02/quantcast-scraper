@@ -1,15 +1,18 @@
 <?php 
 
+
 error_reporting(E_ALL);
 require_once 'phpQuery-onefile.php';
 
 if( file_exists(dirname(__FILE__) . "/proc.lock") ){
+  echo "Found lock file!\n";
   exit(0);
 }
 
 $files = glob( dirname(__FILE__) . "/uploaded_files/*.process" );
 
 if( count($files) == 0 ){
+  echo "No process files found!\n";
   exit(0);
 }
 
@@ -52,13 +55,17 @@ foreach( $lines as $ln ){
   
   $ln = strtolower( trim( $ln ) );
   
-  if( strpos($ln, "http://") === false || strpos($ln, "https://") === false ){
+  if( !strlen($ln) ){
+    continue;
+  }
+  
+  if( strpos($ln, "http://") === false && strpos($ln, "https://") === false ){
     $ln = "http://" . $ln;
   }
   
   $ln = str_replace( "www.", "", $ln );  
   $hostname = parse_url( trim($ln), PHP_URL_HOST );  
-     
+  
   if( array_key_exists($hostname, $scrapedData) || !strlen($hostname) ){
     continue;
   }
@@ -178,6 +185,8 @@ foreach( $lines as $ln ){
 
 curl_close ( $ch );
 
+unlink( dirname(__FILE__) . "/proc.lock" );
+
 $sec = time() - $start;
 $url = "http://hypervipr.com/quantcast-scraper/uploaded_files/" . $base . ".csv";
 $moreUrls = "http://hypervipr.com/quantcast-scraper/uploaded_files/" . $base . "_urls.csv";
@@ -187,5 +196,3 @@ $moreUrls = "http://hypervipr.com/quantcast-scraper/uploaded_files/" . $base . "
 "Processed $count URLs in $sec seconds. 
 Download the files at $url
 $moreUrls \n");
-
-unlink( dirname(__FILE__) . "/proc.lock" );
