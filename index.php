@@ -2,6 +2,13 @@
 
 $isPost = false;
 $error = null;
+$isReset = false;
+
+if( $_REQUEST["reset"] ){
+    $memcache = memcache_connect('localhost', 11211);
+    memcache_set($memcache, "quantcast_reset", true);
+    $isReset = true;
+}
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'):
 
@@ -74,6 +81,12 @@ endif;
               <?php else: ?>
                 <p>Upload a file with ONE URL per line and specify a notification email address.</p>
                 
+                <?php if( $isReset ): ?>
+                    <div class="alert alert-info">
+                        Everything has been cleared. Submit another file.
+                    </div>
+                <?php endif; ?>
+                
                 <form action="" method="POST" enctype="multipart/form-data">
                   <table class="table table-striped">
                     <tbody>
@@ -84,6 +97,10 @@ endif;
                   </table>
                 </form>
               <?php endif; ?>
+              
+              <div style="padding-top: 40px;">
+                  <a id="resetIt" href="index.php?reset=true" class="btn btn-large btn-danger">Reset Everything!</a>
+              </div>
               
             </div>
         </div>

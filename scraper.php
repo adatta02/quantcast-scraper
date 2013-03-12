@@ -1,8 +1,16 @@
 <?php 
 
-
 error_reporting(E_ALL);
 require_once 'phpQuery-onefile.php';
+
+$memcache = memcache_connect('localhost', 11211);
+
+if( memcache_get($memcache, "quantcast_reset") === true ){    
+    memcache_set($memcache, "quantcast_reset", null);    
+    unlink( dirname(__FILE__) . "/proc.lock" );
+    exec("pkill -f scraper.php");
+    exit(0);
+}
 
 if( file_exists(dirname(__FILE__) . "/proc.lock") ){
   echo "Found lock file!\n";
@@ -46,6 +54,8 @@ $csvOutputData = array();
 $csvOutputData[] = join(",", $csvOutputHeader);
 
 $ch = curl_init ();
+$chx = curl_init ();
+
 $count = 0;
 $start = time();
 
@@ -141,7 +151,6 @@ foreach( $lines as $ln ){
   $dataArray[ "hostname" ] = $hostname;
   $scrapedData[ $hostname ] = $dataArray;
 
-  $chx = curl_init ();
   curl_setopt ( $chx, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.2) Gecko/20090729 Firefox/3.5.2 GTB5');
   curl_setopt ( $chx, CURLOPT_URL, "http://" . $hostname );
   curl_setopt ( $chx, CURLOPT_FAILONERROR, false );
@@ -180,6 +189,8 @@ foreach( $lines as $ln ){
     
   echo $hostname . "\n";
   
+  unset($doc);
+  gc_collect_cycles();
   sleep(1);
 }
 
