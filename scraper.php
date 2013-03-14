@@ -189,6 +189,8 @@ foreach( $lines as $ln ){
     
   echo $hostname . "\n";
   
+  $doc->unloadDocument();
+  
   unset($doc);
   gc_collect_cycles();
   sleep(1);
